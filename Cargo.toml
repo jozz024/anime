@@ -14,6 +14,8 @@ crate-type = ["cdylib"]
 skyline = "0.2.0"
 skyline-web = "0.1"
 rand = { git = "https://github.com/skyline-rs/rand" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"
 
 [patch.crates-io]
 getrandom = { git = "https://github.com/skyline-rs/getrandom" }

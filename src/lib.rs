@@ -1,7 +1,15 @@
 #![feature(fs_try_exists)]
 
-use std::time::Duration;
+use std::{time::Duration, io::{BufRead, BufReader}};
+
+use serde::{Serialize, Deserialize};
 mod anime;
+
+#[derive(Serialize,Deserialize)]
+pub struct Config {
+    pub current_video_path: String,
+    pub watch_time: f32
+}
 
 // should public this stuff in arcrop api
 #[repr(C)]
@@ -61,22 +69,48 @@ pub fn main() {
             panic!("No videos present for playing!")
         }
 
+        let mut config: Config;
+        if !std::fs::try_exists("sd:/episodes/config/config.json").unwrap() {
+            std::fs::create_dir("sd:/episodes/config/");
+            config = Config {current_video_path: "".to_string(), watch_time: -1.0};
+            std::fs::write("sd:/episodes/config/config.json", serde_json::to_string(&config).unwrap());
+        }
+        else {
+            let file = std::fs::File::open("sd:/episodes/config/config.json").unwrap();
+            let rdr = BufReader::new(file);
+            config = serde_json::from_reader(rdr).unwrap();
+        }
         // Spawn the webpage for the video player
-        let session = anime::spawn_webpage();
-        let dur = Duration::from_secs(2);
+        let session = anime::spawn_webpage(&mut config);
+        let dur = Duration::from_secs_f32(0.1);
+        let mut current_time: f32 = 0.0;
         unsafe {
             // Loop for when mods gets mounted
             loop {
                 if mods_mounted {
+                    // Sleep because theres a little bit more time left after the mods mount
+                    let final_dur = Duration::from_secs(5);
+                    std::thread::sleep(final_dur);
                     break;
+                }
+
+                if let Some(msg) = session.try_recv() {
+                    let message = msg;
+                    if message.starts_with("current_time:") {
+                        let time = message.strip_prefix("current_time: ").unwrap();
+                        current_time = time.parse().unwrap();
+                    }
+                    else if message == *"video_finished" {
+                        current_time = -1.0;
+                        break;
+                    }
                 }
                 std::thread::sleep(dur);
             }
         }
-        // Sleep because theres a little bit more time left after the mods mount
-        let final_dur = Duration::from_secs(5);
-        std::thread::sleep(final_dur);
         // Exit the video player
         session.exit();
+        config.watch_time = current_time;
+        std::fs::write("sd:/episodes/config/config.json", serde_json::to_string(&config).unwrap()).unwrap();
     }).unwrap();
 }

@@ -2,6 +2,8 @@ use skyline_web::{Webpage, Visibility};
 
 use rand::seq::SliceRandom;
 
+use crate::Config;
+
 static anime_html: &str = include_str!("anime.html");
 
 fn get_episode() -> String {
@@ -17,16 +19,41 @@ fn get_episode() -> String {
     "sd:/episodes/".to_string() + &file_name
 }
 
-pub fn spawn_webpage() -> skyline_web::WebSession{
-    println!("{}", std::fs::try_exists(get_episode()).unwrap());
-    let episode = std::fs::read(get_episode()).unwrap();
-    let page = Webpage::new()
-        .htdocs_dir("contents")
-        .file("index.html", anime_html)
-        .file("episode.mp4", &episode)
-        .open_session(Visibility::Default)
-        .unwrap();
+pub fn spawn_webpage(config: &mut Config) -> skyline_web::WebSession {
+    std::fs::write("sd:/atmosphere/contents/01006A800016E000/manual_html/html-document/contents.htdocs/index.html", anime_html).unwrap();
+    if !config.current_video_path.is_empty() && config.watch_time != -1.0 {
+        let current_episode = config.current_video_path.clone();
+        let current_time = config.watch_time;
 
-    page.show();
-    page
+        let episode = std::fs::read(current_episode).unwrap();
+        let params = format!("seconds={}", current_time);
+        dbg!(&params);
+        let page = Webpage::new()
+            .htdocs_dir("contents")
+            .boot_icon(true)
+            .start_page(&format!("index.html?{}", params))
+            .file("episode.mp4", &episode)
+            .open_session(Visibility::Default)
+            .unwrap();
+
+        page.show();
+        page
+    }
+    else {
+        let current_episode = get_episode();
+        config.current_video_path = current_episode.clone();
+        let episode = std::fs::read(current_episode).unwrap();
+        let params = format!("seconds={}", 0.0);
+        dbg!(&params);
+        let page = Webpage::new()
+            .htdocs_dir("contents")
+            .boot_icon(true)
+            .start_page(&format!("index.html?{}", params))
+            .file("episode.mp4", &episode)
+            .open_session(Visibility::Default)
+            .unwrap();
+
+        page.show();
+        page
+    }
 }

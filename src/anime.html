@@ -1,7 +1,23 @@
 <video autoplay muted controls id="video">
     <source src="episode.mp4" type="video/mp4">
+    <script>
+        function get_playtime() {
+            var { search } = window.location;
+            var play_time = search.split("?seconds=")[1]
+            return play_time
+        }
+        video = document.getElementById("video")
+        video.currentTime = get_playtime()
+        video.addEventListener('timeupdate', function() {
+                window.nx.sendMessage("current_time: " + video.currentTime)
+        });
+        video.addEventListener("ended", function() {
+                window.nx.sendMessage("video_finished")
+        });
+        video.play()
+        video.addEventListener('canplay', function() {
+            this.currentTime = get_playtime()  
+        });
+        video.removeAttribute("muted")
+    </script>
 </video>
-<script>
-    document.getElementById("video").play()
-    document.getElementById("video").removeAttribute("muted")
-</script>
