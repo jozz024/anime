@@ -69,7 +69,10 @@ pub fn main() {
             panic!("No videos present for playing!")
         }
 
+        // Setup the config variable
         let mut config: Config;
+
+        // If the config doesnt exist, create the config dir and make a default config
         if !std::fs::try_exists("sd:/episodes/config/config.json").unwrap() {
             std::fs::create_dir("sd:/episodes/config/");
             config = Config {current_video_path: "".to_string(), watch_time: -1.0};
@@ -91,6 +94,7 @@ pub fn main() {
                     // Sleep because theres a little bit more time left after the mods mount
                     let final_dur = Duration::from_secs(5);
                     std::thread::sleep(final_dur);
+                    current_time += 4.0;
                     break;
                 }
 

@@ -15,8 +15,13 @@ fn get_episode() -> String {
         )
     }).collect::<Vec<String>>();
 
-    let file_name = names.choose(&mut rand::thread_rng()).unwrap().to_owned();
-    "sd:/episodes/".to_string() + &file_name
+    let mut file_name = names.choose(&mut rand::thread_rng()).unwrap().to_owned();
+    let mut filepath = "sd:/episodes/".to_string() + &file_name;
+    while std::fs::metadata(&filepath).unwrap().is_dir() {
+        file_name = names.choose(&mut rand::thread_rng()).unwrap().to_owned();
+        filepath = "sd:/episodes/".to_string() + &file_name;
+    };
+    filepath
 }
 
 pub fn spawn_webpage(config: &mut Config) -> skyline_web::WebSession {
